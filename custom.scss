@@ -1,0 +1,237 @@
+
+/*-- scss:defaults --*/
+
+// Background and text
+$backgroundColor: #FFFDF8;
+$mainColor: #282A36;
+
+// Titles
+$headingColor: #1F3A5F;
+
+// Links and accents
+$linkColor: #2468A0;
+$selectionBackgroundColor: #FFE58A;
+$selectionColor: #282A36;
+
+// =============================
+// Dracula-inspired LIGHT palette
+// =============================
+
+/*-- scss:rules --*/
+
+// General background
+.reveal,
+.reveal-viewport {
+  background-color: #FFFDF8 !important;
+  color: #282A36 !important;
+}
+
+// Titles: dark navy blue
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  color: #1F3A5F !important;
+  font-weight: 700;
+}
+
+// H1 accent underline
+.reveal h1 {
+  border-bottom: 3px solid #E3B52F;
+  padding-bottom: 0.2em;
+}
+
+// Links
+.reveal a {
+  color: #2468A0;
+}
+
+.reveal a:hover {
+  color: #D64545;
+}
+
+// Bold text: golden yellow
+.reveal strong {
+  color: #C58B00;
+}
+
+// Italic text: red
+.reveal em {
+  color: #C13D50;
+}
+
+// Inline code
+.reveal code {
+  color: #B4234D;
+  background-color: #F3E8EF;
+  border-radius: 4px;
+  padding: 0.12em 0.3em;
+}
+
+// =============================
+// Code blocks
+// =============================
+
+.reveal pre {
+  background-color: #F3F2ED !important;
+  color: #282A36 !important;
+  border: 1px solid #E3DED2;
+  border-left: 4px solid #D99A00;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.reveal pre code {
+  background-color: transparent !important;
+  color: #282A36 !important;
+  text-shadow: none !important;
+}
+
+// Ensure code text is dark and readable
+.reveal pre,
+.reveal pre code,
+.reveal pre code *,
+.reveal .hljs {
+  color: #282A36 !important;
+  text-shadow: none !important;
+}
+
+// Syntax highlighting: contrasting colors
+.reveal .hljs-keyword,
+.reveal .hljs-selector-tag,
+.reveal .hljs-built_in {
+  color: #345995 !important;  // blue
+}
+
+.reveal .hljs-string,
+.reveal .hljs-attr {
+  color: #27804A !important;  // green
+}
+
+.reveal .hljs-number,
+.reveal .hljs-literal {
+  color: #C13D50 !important;  // red
+}
+
+.reveal .hljs-comment {
+  color: #777777 !important;  // gray
+  font-style: italic;
+}
+
+.reveal .hljs-title,
+.reveal .hljs-function {
+  color: #9B6500 !important;  // dark gold
+}
+
+.reveal .hljs-variable,
+.reveal .hljs-params {
+  color: #B83270 !important;  // berry
+}
+
+.reveal .hljs-type,
+.reveal .hljs-class {
+  color: #2484A6 !important;  // cyan blue
+}
+
+// Pandoc syntax highlighting classes
+.reveal .sourceCode .kw {
+  color: #345995 !important;
+}
+
+.reveal .sourceCode .st {
+  color: #27804A !important;
+}
+
+.reveal .sourceCode .dv,
+.reveal .sourceCode .fl {
+  color: #C13D50 !important;
+}
+
+.reveal .sourceCode .co {
+  color: #777777 !important;
+  font-style: italic;
+}
+
+.reveal .sourceCode .fu {
+  color: #9B6500 !important;
+}
+
+.reveal .sourceCode .va {
+  color: #B83270 !important;
+}
+
+.reveal .sourceCode .dt {
+  color: #2484A6 !important;
+}
+
+// =============================
+// Blockquotes
+// =============================
+
+.reveal blockquote {
+  background-color: #FFF8E6;
+  border-left: 4px solid #D99A00;
+  padding: 0.8em 1em;
+  color: #44404A;
+  box-shadow: none;
+}
+
+// =============================
+// Lists
+// =============================
+
+// Bullet points: golden yellow
+.reveal ul li::marker {
+  color: #D99A00;
+}
+
+// =============================
+// Tables
+// =============================
+
+.reveal table {
+  border-color: #E5E1D6;
+}
+
+.reveal th {
+  background-color: #FFF0B3;
+  color: #1F3A5F;
+}
+
+.reveal tr:nth-child(even) {
+  background-color: #FFF9EB;
+}
+
+// =============================
+// Slide number: red
+// =============================
+
+.reveal .slide-number {
+  color: #D64545 !important;
+  background-color: transparent !important;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+// =============================
+// Progress bar: red
+// =============================
+
+.reveal .progress {
+  color: #D64545 !important;
+}
+
+.reveal .progress span {
+  background-color: #D64545 !important;
+}
+
+// =============================
+// Selection
+// =============================
+
+::selection {
+  background-color: #FFE58A;
+  color: #282A36;
+}

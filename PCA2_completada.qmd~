@@ -1,0 +1,624 @@
+---
+title: "Análisis de componentes principales"
+subtitle: "PCA — día 2"
+author: "carlos.soto362@gmail.com"
+date: "Noviembre 26, 2026"
+lang: es
+format:
+  revealjs:
+    theme: custom.scss
+    syntax-highlighting: dracula
+    code-copy: true
+    slide-number: true
+    hash: true
+    transition: fade
+    controls: true
+    progress: true
+    center: false
+    margin: 0.08
+    incremental: false
+    math: mathjax
+    code-fold: show
+    footer: "PCA | día 2"
+jupyter: python3
+execute:
+  warning: false
+---
+
+## Temas
+
+1. PCA como maximización de la varianza
+2. La matriz de covarianza y su estimación
+3. Eigenvalores y eigenvectores como solución
+4. Métricas para evaluar una reducción de dimensión
+5. Ejemplo computacional
+
+---
+
+## ¿Qué buscamos con PCA?
+
+Queremos representar un conjunto de observaciones usando menos variables, procurando perder la menor cantidad posible de información.
+
+- Tenemos $n$ observaciones y $p$ variables.
+- Cada observación es un vector $\mathbf{x}_i\in\mathbb{R}^p$.
+- Buscamos nuevas direcciones que resuman la variabilidad de los datos.
+
+**Idea central:** encontrar direcciones en las que los datos tengan la mayor varianza posible.
+
+---
+
+## Antes: centrar los datos
+
+Sea $\mathbf{X}\in\mathbb{R}^{n\times p}$ la matriz de datos. Cada fila es una observación y cada columna una variable.
+
+La media de la variable $j$ es
+
+$$
+\bar{x}_j=\frac{1}{n}\sum_{i=1}^{n}x_{ij}.
+$$
+
+Definimos la matriz centrada:
+
+$$
+\mathbf{X}_c=\mathbf{X}-\mathbf{1}\bar{\mathbf{x}}^T.
+$$
+
+Después de centrar, cada columna tiene media cero.
+
+**¿Por qué?** PCA busca direcciones de variabilidad alrededor del centro de los datos, no direcciones que simplemente apunten hacia una media distinta de cero.
+
+---
+
+## Covarianza entre dos variables
+
+Para dos variables aleatorias $X$ y $Y$,
+
+$$
+\operatorname{Cov}(X,Y)
+=\mathbb{E}\left[(X-\mu_X)(Y-\mu_Y)\right].
+$$
+
+La covarianza mide cómo varían conjuntamente:
+
+- Covarianza positiva: tienden a aumentar juntas.
+- Covarianza negativa: cuando una aumenta, la otra tiende a disminuir.
+- Covarianza cercana a cero: no hay asociación lineal apreciable.
+
+La covarianza depende de las unidades de medida de las variables.
+
+---
+
+## Matriz de covarianza muestral
+
+Para datos centrados, la matriz de covarianza muestral es
+
+$$
+\boxed{
+\mathbf{S}=\frac{1}{n-1}\mathbf{X}_c^T\mathbf{X}_c
+}
+$$
+
+donde $\mathbf{S}\in\mathbb{R}^{p\times p}$.
+
+- La diagonal contiene las varianzas de cada variable.
+- Los elementos fuera de la diagonal contienen covarianzas.
+- $\mathbf{S}$ es simétrica y semidefinida positiva.
+
+**Nota:** el factor $1/(n-1)$ corresponde a la covarianza muestral usual. Para describir la varianza de todo el conjunto observado también puede usarse $1/n$; esto no cambia los eigenvectores, aunque sí escala los eigenvalores.
+
+---
+
+## Ejemplo: construir la matriz de covarianza
+
+```{python}
+import numpy as np
+
+X = np.array([
+    [2.0, 1.0],
+    [3.0, 2.0],
+    [4.0, 2.5],
+    [5.0, 4.0],
+    [6.0, 4.5]
+])
+
+Xc = X - X.mean(axis=0)
+S = Xc.T @ Xc / (len(X) - 1)
+
+print("Media de cada variable:", X.mean(axis=0))
+print("\nDatos centrados:\n", np.round(Xc, 2))
+print("\nMatriz de covarianza:\n", np.round(S, 3))
+```
+
+---
+
+## Interpretar la matriz de covarianza
+
+En el ejemplo anterior,
+
+- $S_{11}$ es la varianza de la primera variable.
+- $S_{22}$ es la varianza de la segunda variable.
+- $S_{12}=S_{21}$ es la covarianza entre ambas.
+
+Una covarianza positiva indica que las variables tienden a moverse en la misma dirección.
+
+La matriz de covarianza resume la variabilidad lineal de los datos, pero todavía no nos dice directamente cuáles son las mejores direcciones para proyectarlos.
+
+---
+
+## PCA como maximización de la varianza
+
+Tomemos una dirección unitaria $\mathbf{w}\in\mathbb{R}^p$:
+
+$$
+\|\mathbf{w}\|_2=1.
+$$
+
+La proyección de una observación centrada $\mathbf{x}_i$ sobre esa dirección es
+
+$$
+z_i=\mathbf{x}_i^T\mathbf{w}.
+$$
+
+En forma matricial, las proyecciones son
+
+$$
+\mathbf{z}=\mathbf{X}_c\mathbf{w}.
+$$
+
+Queremos elegir $\mathbf{w}$ para que las proyecciones tengan la mayor varianza posible.
+
+---
+
+## La varianza de las proyecciones
+
+Como los datos están centrados, la varianza muestral de las proyecciones es
+
+$$
+\begin{aligned}
+\operatorname{Var}(\mathbf{z})
+&=\frac{1}{n-1}\mathbf{z}^T\mathbf{z}\\
+&=\frac{1}{n-1}
+(\mathbf{X}_c\mathbf{w})^T(\mathbf{X}_c\mathbf{w})\\
+&=\mathbf{w}^T
+\left(\frac{1}{n-1}\mathbf{X}_c^T\mathbf{X}_c\right)
+\mathbf{w}\\
+&=\boxed{\mathbf{w}^T\mathbf{S}\mathbf{w}}.
+\end{aligned}
+$$
+
+Por lo tanto, el problema de PCA para la primera componente es
+
+$$
+\boxed{
+\max_{\mathbf{w}}\quad \mathbf{w}^T\mathbf{S}\mathbf{w}
+\quad\text{sujeto a}\quad \mathbf{w}^T\mathbf{w}=1.
+}
+$$
+
+---
+
+## Resolver el problema: multiplicadores de Lagrange
+
+Construimos el lagrangiano:
+
+$$
+\mathcal{L}(\mathbf{w},\lambda)
+=\mathbf{w}^T\mathbf{S}\mathbf{w}
+-\lambda(\mathbf{w}^T\mathbf{w}-1).
+$$
+
+Derivando respecto a $\mathbf{w}$ e igualando a cero:
+
+$$
+2\mathbf{S}\mathbf{w}-2\lambda\mathbf{w}=0.
+$$
+
+Así,
+
+$$
+\boxed{\mathbf{S}\mathbf{w}=\lambda\mathbf{w}.}
+$$
+
+¡Aparece el problema de eigenvalores!
+
+La dirección que maximiza la varianza es un eigenvector de $\mathbf{S}$ asociado al mayor eigenvalor.
+
+---
+
+## ¿Qué significan los eigenvalores?
+
+Como $\mathbf{S}$ es simétrica, sus eigenvalores son reales y sus eigenvectores pueden elegirse ortogonales.
+
+Ordenamos los eigenvalores:
+
+$$
+\lambda_1\geq\lambda_2\geq\cdots\geq\lambda_p\geq 0.
+$$
+
+- El primer eigenvector $\mathbf{w}_1$ define la primera componente principal.
+- El segundo eigenvector $\mathbf{w}_2$ define la segunda componente.
+- Cada eigenvalor $\lambda_j$ es la varianza de los datos proyectados sobre $\mathbf{w}_j$.
+
+Las componentes principales son direcciones ortogonales entre sí.
+
+---
+
+## Segunda componente y siguientes
+
+La segunda componente busca maximizar la varianza, pero debe ser ortogonal a la primera:
+
+$$
+\begin{aligned}
+\max_{\mathbf{w}}\quad &\mathbf{w}^T\mathbf{S}\mathbf{w}\\
+\text{sujeto a}\quad
+&\mathbf{w}^T\mathbf{w}=1,\\
+&\mathbf{w}^T\mathbf{w}_1=0.
+\end{aligned}
+$$
+
+La solución es el eigenvector asociado al segundo eigenvalor.
+
+Repitiendo el argumento, las primeras $k$ componentes son los $k$ eigenvectores asociados a los mayores eigenvalores.
+
+---
+
+## ¿Cómo se calcula en Python?
+
+Para una matriz de covarianza simétrica usamos `numpy.linalg.eigh`.
+
+```{python}
+eigenvalues, eigenvectors = np.linalg.eigh(S)
+
+# eigh devuelve los eigenvalores en orden ascendente.
+order = np.argsort(eigenvalues)[::-1]
+eigenvalues = eigenvalues[order]
+eigenvectors = eigenvectors[:, order]
+
+print("Eigenvalores:", np.round(eigenvalues, 4))
+print("\nEigenvectores (columnas):\n", np.round(eigenvectors, 4))
+```
+
+Cada columna de `eigenvectors` es una dirección principal. El primer eigenvector corresponde al eigenvalor más grande.
+
+---
+
+## Visualización en dos dimensiones
+
+La primera componente apunta en la dirección de mayor dispersión. La segunda es perpendicular a ella.
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(7, 5))
+ax.scatter(Xc[:, 0], Xc[:, 1], s=55, label="Observaciones")
+
+origin = np.zeros(2)
+scale = 1.7
+for j, color in enumerate(["tab:red", "tab:green"]):
+    v = eigenvectors[:, j] * np.sqrt(eigenvalues[j]) * scale
+    ax.annotate(
+        "", xy=v, xytext=origin,
+        arrowprops=dict(arrowstyle="->", lw=2.5, color=color)
+    )
+    ax.text(v[0] * 1.08, v[1] * 1.08, f"PC{j+1}", color=color, fontsize=12)
+
+ax.axhline(0, color="gray", lw=0.8)
+ax.axvline(0, color="gray", lw=0.8)
+ax.set_xlabel("Variable 1 (centrada)")
+ax.set_ylabel("Variable 2 (centrada)")
+ax.set_title("Direcciones principales")
+ax.set_aspect("equal", adjustable="datalim")
+ax.legend()
+plt.show()
+```
+
+---
+
+## Proyectar los datos en las primeras componentes
+
+Sea $\mathbf{W}_k=[\mathbf{w}_1,\ldots,\mathbf{w}_k]$.
+
+Las coordenadas de los datos en el nuevo sistema son
+
+$$
+\boxed{\mathbf{Z}=\mathbf{X}_c\mathbf{W}_k.}
+$$
+
+- $\mathbf{X}_c$ tiene dimensión $n\times p$.
+- $\mathbf{W}_k$ tiene dimensión $p\times k$.
+- $\mathbf{Z}$ tiene dimensión $n\times k$.
+
+Pasamos de $p$ variables originales a $k$ componentes, con $k<p$.
+
+```{python}
+k = 1
+Wk = eigenvectors[:, :k]
+Z = Xc @ Wk
+
+print("Dimensión original:", Xc.shape)
+print("Dimensión reducida:", Z.shape)
+print("Proyecciones:\n", np.round(Z, 3))
+```
+
+---
+
+## ¿Cuánta varianza conservamos?
+
+La varianza explicada por la componente $j$ es $\lambda_j$.
+
+La proporción de varianza explicada (PVE) es
+
+$$
+\boxed{
+\mathrm{PVE}_j=
+\frac{\lambda_j}{\sum_{\ell=1}^{p}\lambda_\ell}.
+}
+$$
+
+La proporción acumulada hasta la componente $k$ es
+
+$$
+\boxed{
+\mathrm{PVE}_{1:k}=
+\frac{\sum_{j=1}^{k}\lambda_j}
+{\sum_{\ell=1}^{p}\lambda_\ell}.
+}
+$$
+
+Esta métrica permite cuantificar qué fracción de la varianza total retienen las primeras componentes.
+
+---
+
+## Calcular la varianza explicada
+
+```{python}
+pve = eigenvalues / eigenvalues.sum()
+cumulative_pve = np.cumsum(pve)
+
+for j, (individual, cumulative) in enumerate(
+    zip(pve, cumulative_pve), start=1
+):
+    print(
+        f"PC{j}: {individual:.1%} individual | "
+        f"{cumulative:.1%} acumulada"
+    )
+```
+
+```{python}
+fig, ax = plt.subplots(figsize=(7, 4))
+components = np.arange(1, len(pve) + 1)
+
+ax.bar(components, pve, label="Individual")
+ax.plot(
+    components, cumulative_pve,
+    marker="o", color="tab:red", label="Acumulada"
+)
+ax.set_xlabel("Componente principal")
+ax.set_ylabel("Proporción de varianza")
+ax.set_ylim(0, 1.05)
+ax.set_xticks(components)
+ax.set_title("Varianza explicada")
+ax.legend()
+plt.show()
+```
+
+---
+
+## ¿Cómo elegir el número de componentes?
+
+No existe un único valor de $k$ que funcione para todos los problemas. Algunas estrategias:
+
+1. **Umbral de varianza acumulada:** elegir el menor $k$ que alcance, por ejemplo, 90% o 95%.
+2. **Scree plot:** buscar un punto de inflexión (*elbow*) en los eigenvalores.
+3. **Desempeño posterior:** evaluar si la reducción conserva la información relevante para la tarea.
+
+El umbral de 90% o 95% es una regla práctica, no una ley estadística.
+
+---
+
+## Reconstrucción aproximada
+
+Una vez proyectados los datos, podemos aproximarlos en el espacio original:
+
+$$
+\boxed{
+\widehat{\mathbf{X}}=
+\mathbf{Z}\mathbf{W}_k^T
+=\mathbf{X}_c\mathbf{W}_k\mathbf{W}_k^T.
+}
+$$
+
+Esta reconstrucción está centrada. Para regresar a las unidades originales, sumamos nuevamente la media:
+
+$$
+\widehat{\mathbf{X}}_{\mathrm{original}}
+=\widehat{\mathbf{X}}+\mathbf{1}\bar{\mathbf{x}}^T.
+$$
+
+Cuanto menor sea $k$, mayor será la compresión y, generalmente, mayor será el error de reconstrucción.
+
+---
+
+## Métrica: error de reconstrucción
+
+Una medida natural es el error cuadrático medio por elemento:
+
+$$
+\boxed{
+\operatorname{MSE}
+=\frac{1}{np}
+\left\|\mathbf{X}_c-\widehat{\mathbf{X}}\right\|_F^2.
+}
+$$
+
+También podemos usar el error relativo de Frobenius:
+
+$$
+\frac{\|\mathbf{X}_c-\widehat{\mathbf{X}}\|_F}
+{\|\mathbf{X}_c\|_F}.
+$$
+
+Para PCA, la aproximación de rango $k$ construida con las primeras $k$ componentes minimiza el error de reconstrucción cuadrático entre las aproximaciones lineales de ese rango.
+
+---
+
+## Calcular el error para distintos valores de k
+
+```{python}
+errors = []
+for k in range(1, Xc.shape[1] + 1):
+    Wk = eigenvectors[:, :k]
+    X_hat = (Xc @ Wk) @ Wk.T
+    mse = np.mean((Xc - X_hat) ** 2)
+    errors.append(mse)
+
+for k, error in enumerate(errors, start=1):
+    print(f"k={k}: MSE={error:.6f}")
+```
+
+El error no aumenta al agregar componentes: cada componente adicional permite representar al menos tanta información como antes.
+
+---
+
+## PCA y SVD: conexión con la clase anterior
+
+En la clase anterior usamos la descomposición en valores singulares:
+
+$$
+\mathbf{X}_c=\mathbf{U}\mathbf{\Sigma}\mathbf{V}^T.
+$$
+
+Entonces,
+
+$$
+\mathbf{S}
+=\frac{1}{n-1}\mathbf{X}_c^T\mathbf{X}_c
+=\mathbf{V}\frac{\mathbf{\Sigma}^T\mathbf{\Sigma}}{n-1}\mathbf{V}^T.
+$$
+
+Por lo tanto:
+
+- Las columnas de $\mathbf{V}$ son los eigenvectores de la covarianza.
+- Los eigenvalores son $\lambda_j=\sigma_j^2/(n-1)$.
+- Los eigenvectores de la covarianza son las direcciones principales de PCA.
+
+**Importante:** para PCA centrado, la SVD debe aplicarse a $\mathbf{X}_c$, no a la matriz original sin centrar.
+
+---
+
+## Covarianza o correlación: ¿cuándo estandarizar?
+
+Si las variables están medidas en escalas muy diferentes, las de mayor escala pueden dominar la covarianza.
+
+Una alternativa es estandarizar cada variable:
+
+$$
+x_{ij}^{*}=\frac{x_{ij}-\bar{x}_j}{s_j},
+$$
+
+donde $s_j$ es la desviación estándar de la variable $j$.
+
+PCA sobre variables estandarizadas equivale a realizar PCA sobre la matriz de correlaciones.
+
+- Usar covarianza: cuando las escalas y unidades tienen significado comparable.
+- Usar correlación: cuando las escalas son distintas o se quiere dar importancia similar a cada variable.
+
+La decisión depende del problema y debe justificarse.
+
+---
+
+## Ejemplo con datos sintéticos
+
+Generamos datos con tres variables, donde dos comparten una fuente importante de variación y la tercera contiene más ruido.
+
+```{python}
+rng = np.random.default_rng(12)
+n = 250
+
+t = rng.normal(size=n)
+X_demo = np.column_stack([
+    3 * t + rng.normal(scale=0.5, size=n),
+    1.5 * t + rng.normal(scale=0.4, size=n),
+    rng.normal(scale=1.2, size=n)
+])
+
+mean_demo = X_demo.mean(axis=0)
+std_demo = X_demo.std(axis=0, ddof=1)
+X_demo_std = (X_demo - mean_demo) / std_demo
+
+S_demo = np.cov(X_demo_std, rowvar=False)
+vals, vecs = np.linalg.eigh(S_demo)
+order = np.argsort(vals)[::-1]
+vals, vecs = vals[order], vecs[:, order]
+
+pve_demo = vals / vals.sum()
+print("Eigenvalores:", np.round(vals, 3))
+print("Varianza explicada:", np.round(pve_demo, 3))
+print("Varianza acumulada:", np.round(np.cumsum(pve_demo), 3))
+```
+
+---
+
+## Interpretación del ejemplo
+
+```{python}
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.bar(
+    np.arange(1, len(pve_demo) + 1),
+    pve_demo,
+    label="Varianza individual"
+)
+ax.plot(
+    np.arange(1, len(pve_demo) + 1),
+    np.cumsum(pve_demo),
+    marker="o",
+    color="tab:red",
+    label="Varianza acumulada"
+)
+ax.set_xlabel("Componente principal")
+ax.set_ylabel("Proporción")
+ax.set_ylim(0, 1.05)
+ax.set_xticks([1, 2, 3])
+ax.set_title("PCA del conjunto sintético estandarizado")
+ax.legend()
+plt.show()
+```
+
+Preguntas para discutir:
+
+- ¿Cuánta varianza explica PC1?
+- ¿Cuántas componentes necesitamos para conservar al menos 90%?
+- ¿Qué información se pierde al usar solo una componente?
+
+---
+
+## Limitaciones de PCA
+
+PCA es útil, pero hay que recordar que:
+
+- Captura relaciones lineales.
+- Es sensible a escalas y valores atípicos.
+- Maximizar varianza no equivale necesariamente a conservar información predictiva.
+- Las componentes pueden ser difíciles de interpretar.
+- No utiliza las etiquetas de clase: es un método no supervisado.
+
+Una visualización en dos dimensiones puede ser útil, pero no garantiza que las clases o grupos estén bien separados.
+
+---
+
+## Resumen
+
+1. Centramos los datos y calculamos la matriz de covarianza.
+2. Buscamos direcciones que maximicen la varianza proyectada.
+3. Las soluciones son los eigenvectores de la matriz de covarianza.
+4. Los eigenvalores cuantifican la varianza de cada componente.
+5. Elegimos $k$ usando varianza explicada, scree plot y/o desempeño posterior.
+6. Evaluamos la reducción con el error de reconstrucción y según el objetivo del análisis.
+
+---
+
+## ¿Preguntas?
+
+**Idea para llevarse:** PCA transforma variables posiblemente correlacionadas en direcciones ortogonales ordenadas por la cantidad de varianza que explican.
+
+Reducción de dimensionalidad | PCA — día 2

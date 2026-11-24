@@ -1,0 +1,48 @@
+---
+title: "Análisis de componentes principales"
+subtitle: "PCA — día 1"
+author: "carlos.soto362@gmail.com"
+date: "Noviembre 25, 2026"
+lang: es
+format:
+  revealjs:
+    theme: custom.scss
+    syntax-highlighting: dracula
+    code-copy: true
+    slide-number: true
+    hash: true
+    transition: fade
+    controls: true
+    progress: true
+    center: false
+    margin: 0.08
+    incremental: false
+    math: mathjax
+    code-fold: show
+    footer: "PCA | dia 1"
+jupyter: python3
+execute:
+  warning: false
+---
+## Temas
+
+1. PCA como maximización de la varianza
+2. Metricas de evaluación
+
+---
+## Matrix de covarianza y su approximación con datos finitos
+
+La covarianza entre dos variables aleatorias $X$ y $Y$ esta dada por,
+
+\begin{equation}
+\mathrm{Cov}(X,Y) = \mathbf{Cov}_{X,Y} = \mathbb{E}[(X-\mu_X)(Y-\mu_Y)],
+\end{equation}
+en donde
+\begin{equation}
+\mu_X = \mathbb{E}[X].
+\end{equation}
+
+Dado la ley de los grandes números, la matrix de covarianza puede approximarse con la matrix de datos centrada $mathbf{X}$ como:
+\begin{equation}
+\mathbf{Cov} \approx = (X-\bar{X})(X-\bar{X})^T, \quad \bar{X} = \sum_{i=1}^n X_i
+\end{equation}

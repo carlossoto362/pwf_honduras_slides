@@ -28,9 +28,9 @@ execute:
 
 1. Motivación
 2. Teorema Eckart–Young–Mirsky
-3. PCA como maximización de la varianza
+3. Ejemplos
 
-**Al final de la clase:** Veremos como surge naturalmente el problema de eigenvalores como solución al problema.
+**Al final de la segunda clase:** Veremos como surge naturalmente el problema de eigenvalores como solución al problema.
 
 ---
 ## Motivación

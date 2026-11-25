@@ -1,0 +1,659 @@
+---
+title: "Regresión lineal y múltiple"
+subtitle: "Aprendizaje supervisado — día 2"
+author: "carlos.soto362@gmail.com"
+date: "Noviembre 26, 2026"
+lang: es
+format:
+  revealjs:
+    theme: custom.scss
+    syntax-highlighting: dracula
+    code-copy: true
+    slide-number: true
+    hash: true
+    transition: fade
+    controls: true
+    progress: true
+    center: false
+    margin: 0.08
+    incremental: false
+    math: mathjax
+    code-fold: show
+    footer: "Aprendizaje supervisado | día 2"
+jupyter: python3
+execute:
+  warning: false
+---
+
+## ¿Dónde estamos?
+
+Hasta ahora hemos estudiado métodos **no supervisados**:
+
+- PCA busca direcciones que resumen la variabilidad de $X$.
+- No necesita una variable objetivo ni etiquetas.
+
+Ahora empezamos con **aprendizaje supervisado**:
+
+- Tenemos variables de entrada $X$ y una respuesta conocida $y$.
+- Buscamos aprender una función que relacione ambas.
+- Usamos esa función para explicar o predecir respuestas en datos nuevos.
+
+La regresión lineal es uno de los modelos supervisados más sencillos y útiles.
+
+---
+
+## Objetivos de esta sesión
+
+1. Entender la idea de regresión como problema supervisado.
+2. Formular el modelo lineal simple y el modelo lineal múltiple.
+3. Estimar parámetros mediante mínimos cuadrados ordinarios (OLS).
+4. Interpretar coeficientes y cuantificar incertidumbre.
+5. Evaluar ajuste y capacidad predictiva.
+6. Reconocer supuestos y limitaciones del modelo.
+
+**Pregunta guía:** ¿qué significa decir que una variable está asociada linealmente con otra?
+
+---
+
+## Un ejemplo: predecir una respuesta
+
+Imaginemos que queremos predecir el consumo eléctrico de una casa usando su temperatura exterior.
+
+- Variable explicativa o predictor: temperatura $x$.
+- Variable respuesta u objetivo: consumo $y$.
+- Observamos pares $(x_i,y_i)$ para $i=1,\ldots,n$.
+
+El objetivo es encontrar una regla que aproxime la relación entre temperatura y consumo.
+
+La palabra *supervisado* significa que, durante el entrenamiento, conocemos tanto los predictores como las respuestas observadas.
+
+---
+
+## Regresión lineal simple
+
+El modelo lineal simple se escribe:
+
+$$
+\boxed{y_i=\beta_0+\beta_1x_i+\varepsilon_i}
+$$
+
+donde:
+
+- $\beta_0$: intercepto.
+- $\beta_1$: pendiente.
+- $\varepsilon_i$: error aleatorio no observado.
+
+La respuesta media condicionada a $x_i$ se modela como
+
+$$
+\mathbb{E}[Y_i\mid X_i=x_i]=\beta_0+\beta_1x_i.
+$$
+
+**Importante:** los puntos observados no tienen que caer exactamente sobre la recta. El modelo describe una tendencia media y admite variabilidad alrededor de ella.
+
+---
+
+## Visualizar el modelo
+
+La recta representa la respuesta predicha; las distancias verticales entre observaciones y recta son los residuos.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(7)
+x = np.linspace(0, 10, 35)
+y = 4 + 2.2*x + rng.normal(0, 3.0, size=len(x))
+
+fig, ax = plt.subplots(figsize=(7, 4.5))
+ax.scatter(x, y, label="Datos observados")
+ax.plot(x, 4 + 2.2*x, color="tab:red", label="Relación media")
+ax.set_xlabel("Temperatura (ejemplo)")
+ax.set_ylabel("Consumo (ejemplo)")
+ax.set_title("Una relación aproximadamente lineal")
+ax.legend()
+plt.show()
+```
+
+La pendiente positiva indica que, en este ejemplo, valores mayores de $x$ se asocian con valores medios mayores de $y$.
+
+---
+
+## ¿Qué queremos decir con «mejor recta»?
+
+Para cada observación, la predicción es
+
+$$
+\hat{y}_i=\hat{\beta}_0+\hat{\beta}_1x_i.
+$$
+
+El residuo es la diferencia entre lo observado y lo predicho:
+
+$$
+e_i=y_i-\hat{y}_i.
+$$
+
+Mínimos cuadrados ordinarios (OLS) elige los coeficientes que minimizan la suma de residuos al cuadrado:
+
+$$
+\boxed{
+\min_{\beta_0,\beta_1}
+\sum_{i=1}^{n}
+(y_i-\beta_0-\beta_1x_i)^2
+}
+$$
+
+¿Por qué elevar al cuadrado?
+
+- Evita que residuos positivos y negativos se cancelen.
+- Penaliza más los errores grandes.
+- Produce una solución matemática conveniente.
+
+---
+
+## Solución en el caso simple
+
+Si la variación de $x$ no es cero, las estimaciones OLS son
+
+$$
+\hat{\beta}_1=
+\frac{\sum_i(x_i-\bar{x})(y_i-\bar{y})}
+{\sum_i(x_i-\bar{x})^2},
+\qquad
+\hat{\beta}_0=\bar{y}-\hat{\beta}_1\bar{x}.
+$$
+
+La pendiente también puede escribirse como
+
+$$
+\hat{\beta}_1=\frac{\operatorname{Cov}(X,Y)}
+{\operatorname{Var}(X)}
+$$
+
+usando la misma convención de divisor en covarianza y varianza.
+
+Esto conecta regresión lineal con conceptos que ya vimos: media, varianza y covarianza.
+
+---
+
+## Ajustar una recta en Python
+
+```{python}
+# Ajuste OLS con fórmulas explícitas
+x_bar = x.mean()
+y_bar = y.mean()
+
+beta1_hat = np.sum((x - x_bar)*(y - y_bar)) / np.sum((x - x_bar)**2)
+beta0_hat = y_bar - beta1_hat*x_bar
+
+y_hat = beta0_hat + beta1_hat*x
+residuals = y - y_hat
+
+print(f"Intercepto estimado: {beta0_hat:.3f}")
+print(f"Pendiente estimada:  {beta1_hat:.3f}")
+print(f"Primeros residuos:   {np.round(residuals[:5], 2)}")
+```
+
+```{python}
+fig, ax = plt.subplots(figsize=(7, 4.5))
+ax.scatter(x, y, label="Observaciones")
+ax.plot(x, y_hat, color="tab:red", label="Recta OLS")
+for xi, yi, ypi in zip(x[::4], y[::4], y_hat[::4]):
+    ax.plot([xi, xi], [yi, ypi], color="gray", alpha=0.7, lw=1)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_title("Predicciones y residuos")
+ax.legend()
+plt.show()
+```
+
+---
+
+## Interpretar los coeficientes
+
+En el modelo
+
+$$
+\mathbb{E}[Y\mid X=x]=\beta_0+\beta_1x,
+$$
+
+- **Intercepto $\beta_0$:** respuesta media estimada cuando $x=0$.
+- **Pendiente $\beta_1$:** cambio esperado en la respuesta media cuando $x$ aumenta una unidad.
+
+Ejemplo: si $\hat{\beta}_1=2.2$, un aumento de una unidad en $x$ se asocia con un aumento de 2.2 unidades en la respuesta media estimada.
+
+La interpretación depende de las unidades y del rango observado. Si $x=0$ está muy lejos de los datos, el intercepto puede no tener interpretación práctica.
+
+---
+
+## De una a varias variables explicativas
+
+En muchos problemas, una respuesta depende de más de un predictor.
+
+Por ejemplo, el precio de una vivienda puede estar asociado con:
+
+- Área en metros cuadrados.
+- Número de habitaciones.
+- Antigüedad.
+- Distancia al centro.
+
+El modelo lineal múltiple es
+
+$$
+\boxed{
+y_i=\beta_0+\beta_1x_{i1}+\cdots+\beta_px_{ip}+\varepsilon_i
+}
+$$
+
+Hay una respuesta $y$ y $p$ variables explicativas.
+
+---
+
+## Interpretar la regresión múltiple
+
+En el modelo
+
+$$
+\mathbb{E}[Y\mid X_1,\ldots,X_p]
+=\beta_0+\beta_1X_1+\cdots+\beta_pX_p,
+$$
+
+el coeficiente $\beta_j$ representa el cambio esperado en $Y$ asociado con aumentar $X_j$ una unidad, **manteniendo constantes los demás predictores**.
+
+Esta interpretación «manteniendo los demás constantes» es una diferencia importante frente a la regresión simple.
+
+Un coeficiente puede cambiar al agregar predictores porque ahora describe una asociación parcial, no una asociación aislada.
+
+---
+
+## Formulación matricial
+
+La regresión múltiple se expresa de forma compacta:
+
+$$
+\boxed{\mathbf{y}=\mathbf{X}\boldsymbol{\beta}+\boldsymbol{\varepsilon}}
+$$
+
+Con intercepto, la primera columna de $\mathbf{X}$ es un vector de unos.
+
+Dimensiones:
+
+- $\mathbf{y}\in\mathbb{R}^{n\times 1}$.
+- $\mathbf{X}\in\mathbb{R}^{n\times(p+1)}$.
+- $\boldsymbol{\beta}\in\mathbb{R}^{(p+1)\times 1}$.
+- $\boldsymbol{\varepsilon}\in\mathbb{R}^{n\times 1}$.
+
+El objetivo OLS es minimizar
+
+$$
+\|\mathbf{y}-\mathbf{X}\boldsymbol{\beta}\|_2^2.
+$$
+
+---
+
+## La solución de mínimos cuadrados
+
+Si las columnas de $\mathbf{X}$ son linealmente independientes, la solución es
+
+$$
+\boxed{
+\hat{\boldsymbol{\beta}}
+=(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}.
+}
+$$
+
+La matriz $\mathbf{X}^T\mathbf{X}$ debe ser invertible para usar esta expresión.
+
+En la práctica, es preferible resolver el problema con métodos numéricos estables (QR o SVD) en vez de calcular explícitamente la inversa.
+
+**Conexión con PCA:** ambas técnicas usan álgebra lineal y matrices. Pero sus objetivos son distintos: PCA encuentra direcciones de variabilidad en $X$; regresión usa $X$ para modelar una respuesta $y$.
+
+---
+
+## ¿Qué pasa geométricamente?
+
+OLS proyecta el vector de respuestas $\mathbf{y}$ sobre el espacio generado por las columnas de $\mathbf{X}$.
+
+- $\hat{\mathbf{y}}=\mathbf{X}\hat{\boldsymbol{\beta}}$ pertenece al espacio columna de $\mathbf{X}$.
+- El vector residual $\mathbf{e}=\mathbf{y}-\hat{\mathbf{y}}$ es ortogonal a ese espacio.
+- En particular, $\mathbf{X}^T\mathbf{e}=0$.
+
+Esta es la razón geométrica de las ecuaciones normales:
+
+$$
+\mathbf{X}^T\mathbf{X}\hat{\boldsymbol{\beta}}
+=\mathbf{X}^T\mathbf{y}.
+$$
+
+---
+
+## Ejemplo de regresión múltiple en Python
+
+Construimos un conjunto de datos sintético con dos predictores.
+
+```{python}
+rng = np.random.default_rng(21)
+n = 120
+
+area = rng.normal(100, 20, n)       # metros cuadrados
+age = rng.uniform(0, 40, n)         # años
+noise = rng.normal(0, 12, n)
+
+price = 35 + 2.8*area - 0.7*age + noise
+
+X = np.column_stack([area, age])
+X_design = np.column_stack([np.ones(n), X])
+
+beta_hat, *_ = np.linalg.lstsq(X_design, price, rcond=None)
+price_hat = X_design @ beta_hat
+
+print("Coeficientes [intercepto, área, antigüedad]:")
+print(np.round(beta_hat, 3))
+```
+
+En este ejemplo, los coeficientes se interpretan en las unidades que definimos para precio, área y antigüedad.
+
+---
+
+## Evaluar el ajuste: suma de cuadrados
+
+Definimos la suma total de cuadrados:
+
+$$
+\mathrm{SST}=\sum_i(y_i-\bar{y})^2.
+$$
+
+La suma de cuadrados residual:
+
+$$
+\mathrm{SSE}=\sum_i(y_i-\hat{y}_i)^2.
+$$
+
+Con intercepto, OLS descompone la variabilidad:
+
+$$
+\mathrm{SST}=\mathrm{SSR}+\mathrm{SSE},
+$$
+
+donde $\mathrm{SSR}=\sum_i(\hat{y}_i-\bar{y})^2$ es la suma de cuadrados explicada.
+
+---
+
+## Coeficiente de determinación: $R^2$
+
+Una medida habitual del ajuste es
+
+$$
+\boxed{
+R^2=1-\frac{\mathrm{SSE}}{\mathrm{SST}}.
+}
+$$
+
+Con intercepto, $R^2$ mide la fracción de la variabilidad observada de $y$ que queda explicada por las predicciones del modelo en esos datos.
+
+- $R^2=1$: ajuste perfecto.
+- $R^2=0$: no mejora respecto a predecir siempre la media, en términos de SSE.
+- Puede ser negativo en datos de evaluación o en modelos sin intercepto.
+
+**Cuidado:** un $R^2$ alto no demuestra causalidad ni garantiza buenas predicciones en datos nuevos.
+
+---
+
+## Calcular métricas de ajuste
+
+```{python}
+resid = price - price_hat
+sst = np.sum((price - price.mean())**2)
+sse = np.sum(resid**2)
+r2 = 1 - sse/sst
+rmse = np.sqrt(np.mean(resid**2))
+mae = np.mean(np.abs(resid))
+
+print(f"R² en los datos de entrenamiento: {r2:.3f}")
+print(f"RMSE: {rmse:.3f}")
+print(f"MAE:  {mae:.3f}")
+```
+
+- **RMSE:** penaliza más los errores grandes y conserva las unidades de $y$.
+- **MAE:** promedio del error absoluto, también en unidades de $y$.
+- Estas métricas calculadas en entrenamiento no estiman por sí solas el desempeño fuera de muestra.
+
+---
+
+## $R^2$ ajustado
+
+Al agregar predictores, el $R^2$ de entrenamiento nunca disminuye, incluso si la nueva variable aporta muy poco.
+
+El $R^2$ ajustado penaliza el número de predictores:
+
+$$
+\boxed{
+R^2_{\mathrm{aj}}
+=1-(1-R^2)\frac{n-1}{n-p-1}
+}
+$$
+
+donde $n$ es el número de observaciones y $p$ el número de predictores (sin contar el intercepto).
+
+No reemplaza la evaluación en datos de prueba, pero ayuda a comparar modelos con distinto número de variables.
+
+---
+
+## Separar entrenamiento y prueba
+
+Para evaluar predicción, no debemos medir únicamente sobre los datos usados para ajustar el modelo.
+
+1. Dividimos los datos en entrenamiento y prueba.
+2. Ajustamos los coeficientes usando entrenamiento.
+3. Predecimos las respuestas del conjunto de prueba.
+4. Calculamos métricas en datos no usados para ajustar.
+
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, price, test_size=0.25, random_state=42
+)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+pred_test = model.predict(X_test)
+
+print("Intercepto:", round(model.intercept_, 3))
+print("Coeficientes:", np.round(model.coef_, 3))
+print("R² prueba:", round(r2_score(y_test, pred_test), 3))
+print("RMSE prueba:", round(np.sqrt(mean_squared_error(y_test, pred_test)), 3))
+print("MAE prueba:", round(mean_absolute_error(y_test, pred_test), 3))
+```
+
+---
+
+## Inferencia: ¿qué tan inciertos son los coeficientes?
+
+Hasta ahora usamos regresión para estimar y predecir. La estadística también permite cuantificar incertidumbre.
+
+Bajo ciertos supuestos, podemos estudiar:
+
+- Errores estándar de los coeficientes.
+- Intervalos de confianza.
+- Pruebas de hipótesis sobre coeficientes.
+
+Por ejemplo, para un predictor $X_j$ podemos plantear:
+
+$$
+H_0:\beta_j=0
+\qquad\text{vs.}\qquad
+H_1:\beta_j\neq 0.
+$$
+
+La pregunta es si los datos aportan evidencia de una asociación lineal parcial distinta de cero, bajo el modelo y sus supuestos.
+
+---
+
+## Supuestos clásicos del modelo lineal
+
+Para la interpretación e inferencia clásica de OLS suelen considerarse:
+
+1. **Linealidad en los parámetros:** el valor esperado de $Y$ se expresa como una combinación lineal de los coeficientes.
+2. **Exogeneidad:** $\mathbb{E}[\varepsilon\mid X]=0$.
+3. **Ausencia de colinealidad perfecta:** ningún predictor es combinación lineal exacta de los demás.
+4. **Errores no correlacionados entre observaciones** (en el caso clásico).
+5. **Homoscedasticidad:** varianza del error constante, $\operatorname{Var}(\varepsilon\mid X)=\sigma^2$.
+
+La normalidad de los errores es un supuesto adicional usado para la inferencia exacta en muestras pequeñas; no es necesaria para calcular OLS.
+
+---
+
+## ¿Qué ocurre si los supuestos fallan?
+
+- No linealidad: la recta puede describir mal la relación.
+- Variables omitidas relacionadas con $X$: los coeficientes pueden estar sesgados.
+- Heteroscedasticidad: los errores estándar clásicos pueden ser incorrectos.
+- Dependencia entre observaciones: la inferencia usual puede fallar.
+- Colinealidad alta: los coeficientes pueden ser inestables y tener errores estándar grandes.
+
+Los diagnósticos y el conocimiento del problema son tan importantes como ajustar el modelo.
+
+---
+
+## Diagnóstico visual de residuos
+
+Los residuos ayudan a detectar patrones que el modelo no está capturando.
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+axes[0].scatter(price_hat, resid, alpha=0.75)
+axes[0].axhline(0, color="tab:red", linestyle="--")
+axes[0].set_xlabel("Valores ajustados")
+axes[0].set_ylabel("Residuos")
+axes[0].set_title("Residuos vs. ajustados")
+
+axes[1].hist(resid, bins=18, edgecolor="white")
+axes[1].set_xlabel("Residuo")
+axes[1].set_ylabel("Frecuencia")
+axes[1].set_title("Distribución de residuos")
+
+plt.tight_layout()
+plt.show()
+```
+
+Idealmente, el gráfico de residuos no muestra patrones sistemáticos ni cambios evidentes en su dispersión. Un histograma ayuda a inspeccionar la forma de la distribución, pero no prueba normalidad.
+
+---
+
+## Colinealidad entre predictores
+
+Si dos predictores contienen información muy similar, puede ser difícil separar sus contribuciones.
+
+Ejemplo: área en metros cuadrados y área en pies cuadrados son esencialmente la misma variable.
+
+Consecuencias posibles:
+
+- Coeficientes sensibles a pequeños cambios en los datos.
+- Errores estándar grandes.
+- Signos o magnitudes difíciles de interpretar.
+
+La colinealidad no necesariamente perjudica la predicción dentro del rango observado, pero sí complica la interpretación de coeficientes individuales.
+
+---
+
+## Asociación no significa causalidad
+
+Una regresión puede describir asociaciones y producir predicciones útiles, pero por sí sola no demuestra que cambiar $X$ cause un cambio en $Y$.
+
+Por ejemplo, una asociación entre consumo de helado y visitas a piscinas no implica que el helado cause las visitas: la temperatura puede influir en ambas.
+
+Para interpretar causalmente los coeficientes se necesita un diseño de investigación y supuestos adicionales sobre confusión, selección y temporalidad.
+
+**Mensaje clave:** un modelo estadístico no sustituye el razonamiento sobre cómo se generaron los datos.
+
+---
+
+## ¿Y si la relación no es una recta?
+
+«Lineal» se refiere a que el modelo es lineal en sus parámetros, no necesariamente a que cada predictor aparezca sin transformaciones.
+
+Por ejemplo:
+
+$$
+y=\beta_0+\beta_1x+\beta_2x^2+\varepsilon
+$$
+
+es un modelo lineal en los coeficientes, aunque la curva sea cuadrática en $x$.
+
+También podemos incluir interacciones:
+
+$$
+y=\beta_0+\beta_1x_1+\beta_2x_2
++\beta_3x_1x_2+\varepsilon.
+$$
+
+Esto permite representar relaciones más flexibles manteniendo la estructura de regresión lineal.
+
+---
+
+## Regresión lineal: fortalezas y límites
+
+**Fortalezas**
+
+- Fácil de interpretar y comunicar.
+- Entrenamiento rápido.
+- Base matemática clara.
+- Buen punto de referencia (*baseline*).
+- Permite inferencia bajo supuestos explícitos.
+
+**Limitaciones**
+
+- Puede representar mal relaciones complejas.
+- Es sensible a valores atípicos.
+- La colinealidad dificulta interpretar coeficientes.
+- La extrapolación puede ser peligrosa.
+- La inferencia depende de supuestos sobre los errores y el diseño.
+
+---
+
+## Puente hacia métodos supervisados más avanzados
+
+La regresión lineal nos deja varias preguntas:
+
+- ¿Qué hacemos cuando hay muchísimos predictores?
+- ¿Cómo evitamos sobreajuste?
+- ¿Cómo modelamos relaciones no lineales?
+- ¿Qué pasa si la respuesta es una categoría en vez de un número?
+
+Estas preguntas motivan métodos como:
+
+- Ridge y Lasso (regularización).
+- Árboles de decisión y random forests.
+- Gradient boosting.
+- Máquinas de vectores de soporte.
+- Regresión logística y otros métodos de clasificación.
+
+La regresión lineal es una referencia fundamental para entender qué añaden estos métodos.
+
+---
+
+## Resumen
+
+- La regresión es un método supervisado: aprende una relación entre predictores $X$ y respuesta $y$.
+- OLS estima los coeficientes minimizando la suma de residuos al cuadrado.
+- En regresión múltiple, cada coeficiente describe una asociación parcial, manteniendo los demás predictores constantes.
+- $R^2$, RMSE y MAE describen aspectos distintos del ajuste.
+- La evaluación predictiva requiere datos no usados durante el entrenamiento.
+- La inferencia estadística depende de supuestos que debemos revisar.
+- Asociación no implica causalidad.
+
+---
+
+## Para discutir
+
+1. Si el $R^2$ aumenta al agregar variables, ¿significa que el modelo mejoró?
+2. ¿Cómo puede un predictor ser importante por sí solo y dejar de serlo al incluir otro?
+3. ¿Por qué un buen ajuste en entrenamiento no garantiza buenas predicciones?
+4. ¿Qué diferencia hay entre explicar una asociación y demostrar causalidad?
+
+**Idea para llevarse:** un modelo no es solo una ecuación ajustada; también debemos entender qué estima, qué supuestos requiere y cómo se evalúa.

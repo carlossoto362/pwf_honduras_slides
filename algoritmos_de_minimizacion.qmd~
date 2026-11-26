@@ -1,0 +1,28 @@
+---
+title: "Aproximando la información de una matriz"
+subtitle: "Algoritmos de minimización — día 3"
+author: "carlos.soto362@gmail.com"
+date: "Noviembre 27, 2026"
+lang: es
+format:
+  revealjs:
+    theme: custom.scss
+    syntax-highlighting: dracula
+    code-copy: true
+    slide-number: true
+    hash: true
+    transition: fade
+    controls: true
+    progress: true
+    center: false
+    margin: 0.08
+    incremental: false
+    math: mathjax
+    code-fold: show
+    footer: "Algoritmos de minimización | dia 3"
+jupyter: python3
+execute:
+  warning: false
+---
+
+We ask first whether we need a theory of creative thinking distinct from a theory of problem solving. Subject to minor qualifications, we conclude there is no such need - that we call problem solving creative when the problems solved are relatively new and difficult. Next, we summarize what has been learned about problem solving by simulating certain human problem solving processes with digital computers. Finally, we indictae some of the differences in degree that might be observed in comparing relatively creative with relative routine problem solving. 
